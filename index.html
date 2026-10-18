@@ -123,11 +123,11 @@ h1{font-family:var(--serif);font-style:italic;font-weight:300;font-size:clamp(38
 <button class="mus" id="mus" aria-label="Pausar o reanudar la canción"><span class="eq"><i></i><i></i><i></i></span><span>Ferxxo 100</span></button>
 <script>
 function b64d(s){s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';const b=atob(s),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u;}
-const _CHK=b64d('HKMjdeHu1cT1Ka/kL7ei0hFwHXGsQJI8NeKRzKnW');
+const _CHK=b64d('uN/gehsb/bYdMDwOQObgQhg0PrEkfxVYQ7BimV2o');
 function keyStr(){const m=(location.hash||'').match(/k=([A-Za-z0-9_-]{20,})/);if(m){try{localStorage.setItem('coincidir-llave',m[1])}catch(e){}return m[1];}try{return localStorage.getItem('coincidir-llave')}catch(e){return null}}
 async function dec(key,buf){const u=new Uint8Array(buf);return crypto.subtle.decrypt({name:'AES-GCM',iv:u.slice(0,12)},key,u.slice(12));}
 async function getKey(){const s=keyStr();if(!s)return null;try{const k=await crypto.subtle.importKey('raw',b64d(s),'AES-GCM',false,['decrypt']);await dec(k,_CHK.buffer);return {key:k,s};}catch(e){return null}}
-const PARTS={"libro.bin": 3, "mapa.bin": 2, "historia.bin": 3};
+const PARTS={"libro4.bin": 2, "mapa3.bin": 2, "historia.bin": 3};
 async function fetchBin(url,onp){ const n=PARTS[url]||0; if(!n) return fetchOne(url,onp);
   const prog=new Array(n).fill(0); const bufs=await Promise.all([...Array(n).keys()].map(i=>fetchOne(url.replace('.bin','-'+(i+1)+'.bin'),v=>{prog[i]=v;onp&&onp(prog.reduce((a,b)=>a+b,0)/n);})));
   const tot=bufs.reduce((a,b)=>a+b.byteLength,0), out=new Uint8Array(tot); let o=0; for(const b of bufs){out.set(new Uint8Array(b),o);o+=b.byteLength;} return out.buffer; }
