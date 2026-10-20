@@ -96,16 +96,16 @@ h1{font-family:var(--serif);font-style:italic;font-weight:300;font-size:clamp(38
 </head>
 <body>
 <main class="stage" id="stage">
-  <button class="env-wrap" id="openBtn" aria-label="Abrir la tarjeta">
+  <button class="env-wrap" id="openBtn" aria-label="Abrir la tarjeta" aria-controls="invitationCard" aria-expanded="false">
     <div class="to">Para Aleja</div>
     <div class="from">De Sebas</div>
     <div class="env"><div class="back"></div><div class="peek"></div><div class="front"></div><div class="flap"></div><div class="seal">S·A</div></div>
     <div class="hint"><i></i>Toca el sobre para abrirlo</div>
   </button>
 
-  <section class="card" aria-live="polite">
+  <section class="card" id="invitationCard" aria-live="polite" inert>
     <div class="k">Sebas y Aleja</div>
-    <h1>Qué bonito fue<br>coincidir contigo</h1>
+    <h1 tabindex="-1" id="invitationTitle">Qué bonito fue<br>coincidir contigo</h1>
     <div class="rule"></div>
     <p class="sub">La belleza de nuestros días</p>
     <p class="q">«Gracias al mundo por personas como tú y por tener la suerte de coincidir.»<small>De una carta de San Valentín</small></p>
@@ -123,11 +123,11 @@ h1{font-family:var(--serif);font-style:italic;font-weight:300;font-size:clamp(38
 <button class="mus" id="mus" aria-label="Pausar o reanudar la canción"><span class="eq"><i></i><i></i><i></i></span><span>Ferxxo 100</span></button>
 <script>
 function b64d(s){s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';const b=atob(s),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u;}
-const _CHK=b64d('uN/gehsb/bYdMDwOQObgQhg0PrEkfxVYQ7BimV2o');
+const _CHK=b64d('bYkah65vofO7jFFCOPC95fH44l3BzJ+LOCZy2Utm');
 function keyStr(){const m=(location.hash||'').match(/k=([A-Za-z0-9_-]{20,})/);if(m){try{localStorage.setItem('coincidir-llave',m[1])}catch(e){}return m[1];}try{return localStorage.getItem('coincidir-llave')}catch(e){return null}}
 async function dec(key,buf){const u=new Uint8Array(buf);return crypto.subtle.decrypt({name:'AES-GCM',iv:u.slice(0,12)},key,u.slice(12));}
 async function getKey(){const s=keyStr();if(!s)return null;try{const k=await crypto.subtle.importKey('raw',b64d(s),'AES-GCM',false,['decrypt']);await dec(k,_CHK.buffer);return {key:k,s};}catch(e){return null}}
-const PARTS={"libro4.bin": 2, "mapa3.bin": 2, "historia.bin": 3};
+const PARTS={"libro17.bin": 4, "mapa16.bin": 3, "historia13.bin": 7};
 async function fetchBin(url,onp){ const n=PARTS[url]||0; if(!n) return fetchOne(url,onp);
   const prog=new Array(n).fill(0); const bufs=await Promise.all([...Array(n).keys()].map(i=>fetchOne(url.replace('.bin','-'+(i+1)+'.bin'),v=>{prog[i]=v;onp&&onp(prog.reduce((a,b)=>a+b,0)/n);})));
   const tot=bufs.reduce((a,b)=>a+b.byteLength,0), out=new Uint8Array(tot); let o=0; for(const b of bufs){out.set(new Uint8Array(b),o);o+=b.byteLength;} return out.buffer; }
@@ -141,7 +141,7 @@ const mus=document.getElementById('mus');
 const SIL='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
 const song=new Audio(); song.loop=true; song.volume=0; let KEY=null, songReady=false;
 const keyP=getKey();
-function fade(v,ms){const s=song.volume,t0=performance.now();const f=t=>{const k=Math.min(1,(t-t0)/ms);song.volume=s+(v-s)*k;if(k<1)requestAnimationFrame(f);else if(v===0)song.pause();};requestAnimationFrame(f);}
+function fade(v,ms){const s=song.volume,t0=performance.now();const f=t=>{const k=Math.max(0,Math.min(1,(t-t0)/ms));song.volume=s+(v-s)*k;if(k<1)requestAnimationFrame(f);else if(v===0)song.pause();};requestAnimationFrame(f);}
 function play(){if(!songReady)return;song.play().then(()=>{mus.classList.add('on');fade(.8,2500);}).catch(()=>{});}
 mus.onclick=()=>{ if(song.paused) play(); else {mus.classList.remove('on');fade(0,500);} };
 async function loadSong(){ try{ const d=await dec(KEY,await fetchBin('c1.bin')); song.src=URL.createObjectURL(new Blob([d],{type:'audio/mpeg'})); songReady=true; play(); }catch(e){} }
@@ -149,15 +149,20 @@ for(let k=0;k<26;k++){const p=document.createElement('i');p.className='p';p.styl
   p.style.setProperty('--d',(5+Math.random()*5).toFixed(1)+'s');p.style.setProperty('--w',(0.9+Math.random()*2.5).toFixed(1)+'s');
   p.style.setProperty('--x',((Math.random()-.5)*160).toFixed(0)+'px');if(k%3===0)p.style.background='#d8b77e';if(k%4===1)p.style.background='#e6d6bd';document.body.appendChild(p);}
 document.getElementById('openBtn').onclick=async()=>{ if(document.body.classList.contains('open')) return; document.body.classList.add('open');
+  document.getElementById('openBtn').setAttribute('aria-expanded','true');
+  document.getElementById('openBtn').setAttribute('tabindex','-1');
+  document.getElementById('invitationCard').inert=false;
+  document.getElementById('invitationTitle').focus({preventScroll:true});
   song.src=SIL; song.play().catch(()=>{});
   const r=await keyP;
   if(!r){ document.body.classList.add('nok'); return; }
   KEY=r.key; document.querySelectorAll('.acts a[href$=".html"]').forEach(a=>a.href=a.getAttribute('href')+'#k='+r.s);
   setTimeout(()=>document.body.classList.add('ok'),700); loadSong(); };
-document.getElementById('pdf').onclick=async e=>{ e.preventDefault(); if(!KEY) return; const b=document.getElementById('pdfb'); b.textContent='Preparando…';
-  try{ const d=await dec(KEY,await fetchBin('historia.bin',v=>b.textContent=Math.round(v*100)+'%'));
-    const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([d],{type:'application/pdf'})); a.download='Qué bonito fue coincidir contigo.pdf'; document.body.appendChild(a); a.click(); a.remove(); b.textContent='PDF'; }
-  catch(err){ b.textContent='Inténtalo de nuevo'; } };
+let downloadingPdf=false;
+document.getElementById('pdf').onclick=async e=>{ e.preventDefault(); if(!KEY||downloadingPdf) return; downloadingPdf=true;const b=document.getElementById('pdfb'); b.textContent='Preparando…';
+  try{ const d=await dec(KEY,await fetchBin('historia13.bin',v=>b.textContent=Math.round(v*100)+'%'));
+    const a=document.createElement('a'); const url=URL.createObjectURL(new Blob([d],{type:'application/pdf'}));a.href=url; a.download='Qué bonito fue coincidir contigo.pdf'; document.body.appendChild(a); a.click(); a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000); b.textContent='PDF'; }
+  catch(err){ b.textContent='Inténtalo de nuevo'; } finally {downloadingPdf=false;} };
 document.querySelectorAll('.acts a[href*=".html"]').forEach(a=>a.addEventListener('click',()=>fade(0,300)));
 </script>
 </body>
